@@ -41,7 +41,8 @@ var cookie = require("./modules/cookie-node"),
     querystring = require("querystring"),
     http = require("http"),
     https = require("https"),
-    NjServer = require("./modules/ninja"); // My custom server
+    NjServer = require("./modules/ninja"), // My custom server
+    DM = require("./modules/dm-api"); // My custom server
 
 /*************************************************
  *
