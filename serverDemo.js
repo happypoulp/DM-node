@@ -273,7 +273,7 @@ var CONTROLLERS = {
                                     client_secret: CONF.api_secret,
                                     refresh_token: datas.refresh_token
                                 },
-                                refreshPostData = JSON.stringify(refresh_call);
+                                refreshPostData = querystring.stringify(refresh_call);
 
                             console.log('refreshPostData : ');
                             console.log(refreshPostData);
@@ -286,7 +286,6 @@ var CONTROLLERS = {
                                         'host': CONF.api_domain,
                                         'Content-Length': Buffer.byteLength(refreshPostData, 'utf8'),
                                         'Content-Type': 'application/x-www-form-urlencoded'
-                                        // 'Authorization': 'OAuth ' + request.getCookie('at')
                                     },
                                     method: 'POST'
                                 },
