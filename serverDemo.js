@@ -42,7 +42,7 @@ var cookie = require("./modules/cookie-node"),
     http = require("http"),
     https = require("https"),
     NjServer = require("./modules/ninja"), // My custom server
-    DM = require("./modules/dm-api"); // My custom server
+    DM = require("./modules/dm-api"); // DM API
 
 /*************************************************
  *
@@ -51,9 +51,9 @@ var cookie = require("./modules/cookie-node"),
 **************************************************/
 var ROUTES = {
     '/': 'index',
+    '/login': 'login',
     '/reset': 'reset',
     '/oauth_success': 'oauth_success',
-    '/get_access_token': 'get_access_token',
     '/api_action': 'api_action'
 };
 
@@ -66,22 +66,51 @@ var baseDatas = {
     actions: {
         testecho: {
             call: 'test.echo',
-            args: '{"message":"This is a useless message..."}'
+            args:
+            {
+                "message": "This is a useless message..."
+            }
         },
         videolist: {
             call: 'video.list',
-            args: '{"localization":"detect","fields": ["id", "title"],"channel":"tv"}'
+            args:
+            {
+                "localization": "detect",
+                "fields": ["id", "title"],
+                "channel": "tv"
+            }
         },
         videoinfo: {
             call: 'video.info',
-            args: '{"id":"xf3tgr", "fields": ["title", "description", "url", "duration", "thumbnail_large_url"]}'
+            args:
+            {
+                "id": "xf3tgr",
+                "fields": ["title", "description", "url", "duration", "thumbnail_large_url"]
+            }
         },
         videoedit: {
             call: 'video.edit',
-            args: '{"id":"xf3tgr", "title": "tranquilize edtited"}'
+            args:
+            {
+                "id": "xf3tgr",
+                "title": "tranquilize edtited"
+            }
         }
     }
 };
+
+
+var dm = DM.new().init({
+    client_id: key,
+    client_secret: secret
+});
+
+function getDM(request)
+{
+    return dm.set_access_token(request.getCookie('at'))
+        .set_refresh_token(request.getCookie('rt'))
+        .set_expires_in(request.getCookie('ei'));
+}
 
 /*************************************************
  *
@@ -95,12 +124,102 @@ var CONTROLLERS = {
 
         datas.access_token = request.getCookie("at");
         datas.refresh_token = request.getCookie("rt");
+        var currentDate = new Date();
+        currentDate.setTime(parseInt(request.getCookie("ei")));
+        datas.expires_at = currentDate.toString();
+
+        if (!datas.access_token)
+        {
+            response.emit('render', {
+                'status': 302,
+                'headers': {
+                    'Location': '/login'
+                }
+            });
+        }
+        else
+        {
+            response.emit('render', {
+                'status': 200,
+                'template': 'index.html',
+                'datas': datas
+            });
+        }
+    },
+    login : function(request, response)
+    {
+        baseDatas.authorize_url = dm.get_authorize_url('http://'+ CONF.serverURL + '/oauth_success', ['read', 'write']);
 
         response.emit('render', {
-            'status': 200,
-            'template': 'index.html',
-            'datas': datas
+            status: 200,
+            template: 'login.html',
+            datas: {
+                login_url: baseDatas.authorize_url
+            }
         });
+    },
+    oauth_success : function(request, response)
+    {
+        dm.get_access_token(request.GETS, function(datas)
+        {
+            response.setCookie("at", datas.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            response.setCookie("rt", datas.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            response.setCookie("ei", new Date().getTime() + datas.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+
+            response.emit('render', {
+                status: 302,
+                'headers': {
+                    'Location': '/'
+                }
+            });
+        });
+    },
+    api_action: function(request, response)
+    {
+        if (request.GETS.call && baseDatas.actions[request.GETS.call])
+        {
+            getDM(request).call(baseDatas.actions[request.GETS.call], function(datas)
+            {
+                var access_token = request.getCookie("at");
+                refresh_token = request.getCookie("rt");
+                expires_in = request.getCookie("ei");
+
+                console.log(datas);
+
+                if (datas.access_token)
+                {
+                    access_token = datas.access_token;
+                    response.setCookie("at", access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                }
+                if (datas.refresh_token)
+                {
+                    refresh_token = datas.refresh_token;
+                    response.setCookie("rt", refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                }
+                if (datas.expires_in)
+                {
+                    expires_in = datas.expires_in;
+                    response.setCookie("ei", new Date().getTime() + expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                }
+
+                var currentDate = new Date();
+                currentDate.setTime(parseInt(request.getCookie('ei')));
+                expires_at = currentDate.toString();
+
+                response.emit('render', {
+                    'status': 200,
+                    'template': 'index.html',
+                    'datas': {
+                        call: request.GETS.call,
+                        api_call_return: JSONResponse,
+                        api_call_return_str: JSON.stringify(JSONResponse),
+                        access_token: access_token,
+                        refresh_token: refresh_token,
+                        expires_at: expires_at
+                    }
+                });
+            });
+        }
     },
     reset : function(request, response)
     {
@@ -110,241 +229,11 @@ var CONTROLLERS = {
         response.clearCookie('rt');
 
         response.emit('render', {
-            'status': 200,
-            'template': 'index.html',
-            'datas': datas
+            status: 302,
+            'headers': {
+                'Location': '/'
+            }
         });
-    },
-    oauth_success : function(request, response)
-    {
-        var datas = baseDatas;
-
-        if (request.GETS.code)
-        {
-            // console.log(request.GETS.code);
-            datas.code_access_token = request.GETS.code;
-            datas.access_token_query_params = querystring.stringify(request.GETS);
-        }
-
-        response.emit('render', {
-            'status': 200,
-            'template': 'index.html',
-            'datas': datas
-        });
-    },
-    get_access_token : function(request, response)
-    {
-        var datas = baseDatas,
-            httpModule = (CONF.api_protocol == 'https' ? https : http),
-            query = {
-                grant_type: 'authorization_code',
-                client_id: CONF.api_key,
-                client_secret: CONF.api_secret,
-                redirect_uri: 'http://' + CONF.serverURL + '/oauth_success',
-                code: request.GETS.code
-            },
-            postData = querystring.stringify(query),
-            options = {
-                hostname: CONF.api_domain,
-                port: (CONF.api_protocol == 'https' ? 443 : 80),
-                path: '/oauth/token',
-                headers: {
-                    'host': CONF.api_domain,
-                    'Content-Length': Buffer.byteLength(postData, 'utf8'),
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                method: 'POST'
-            },
-            req = httpModule.request(options, function(res)
-            {
-                var responseBody = "";
-
-                console.log('STATUS: ' + res.statusCode);
-                console.log('HEADERS: ' + JSON.stringify(res.headers));
-
-                res.setEncoding('utf8');
-
-                res.on("data", function(chunk)
-                {
-                    console.log('BODY: ' + chunk);
-                    responseBody += chunk;
-                });
-
-                res.on("end", function()
-                {
-                    JSONResponse = JSON.parse(responseBody);
-
-                    console.log(JSONResponse);
-
-                    datas.access_token = JSONResponse.access_token;
-                    datas.refresh_token = JSONResponse.refresh_token;
-
-                    response.setCookie("at", JSONResponse.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                    response.setCookie("rt", JSONResponse.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-
-                    console.log('datas');
-                    console.log(datas);
-
-                    response.emit('render', {
-                        'status': 200,
-                        'template': 'index.html',
-                        'datas': datas
-                    });
-                });
-
-            });
-
-        req.on('error', function(e)
-        {
-            console.log('problem with request: ' + e.message);
-        });
-
-        // write data to request body
-        req.write(postData);
-        req.end();
-    },
-    api_action: function(request, response)
-    {
-        var datas = baseDatas;
-
-        if (request.GETS.call)
-        {
-            datas.call = request.GETS.call;
-
-            var httpModule = (CONF.api_protocol == 'https' ? https : http),
-                query = {
-                    'call': request.GETS.call,
-                    'args': JSON.parse(request.GETS.args)
-                },
-                postData = JSON.stringify(query),
-                options = {
-                    hostname: CONF.api_domain,
-                    port: (CONF.api_protocol == 'https' ? 443 : 80),
-                    path: '/json',
-                    headers: {
-                        'host': CONF.api_domain,
-                        'Content-Length': Buffer.byteLength(postData, 'utf8'),
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Authorization': 'OAuth ' + request.getCookie('at')
-                    },
-                    method: 'POST'
-                },
-                req = httpModule.request(options, function(res)
-                {
-                    var responseBody = "";
-
-                    console.log('STATUS: ' + res.statusCode);
-                    console.log('HEADERS: ' + JSON.stringify(res.headers));
-
-                    res.setEncoding('utf8');
-
-                    res.on("data", function(chunk)
-                    {
-                        console.log('BODY: ' + chunk);
-                        responseBody += chunk;
-                    });
-
-                    res.on("end", function()
-                    {
-                        JSONResponse = JSON.parse(responseBody);
-
-                        console.log(JSONResponse);
-
-                        datas.access_token = request.getCookie("at");
-                        datas.refresh_token = request.getCookie("rt");
-
-                        console.log('datas');
-                        console.log(datas);
-
-                        /**
-                         *
-                         * ACCESS TOKEN EXPIRED, NEED TO GET A NEW ONE USING REFRESH TOKEN
-                         *
-                        **/
-
-                        if (JSONResponse.error && res.headers['www-authenticate'].match(/error="(expired_token|invalid_token)"/))
-                        {
-                            console.log('NEED TO REFRESH ACCESS TOKEN');
-                            needAccessTokenRefresh = false;
-
-                            var refresh_call = {
-                                    grant_type: 'refresh_token',
-                                    client_id: CONF.api_key,
-                                    client_secret: CONF.api_secret,
-                                    refresh_token: datas.refresh_token
-                                },
-                                refreshPostData = querystring.stringify(refresh_call);
-
-                            console.log('refreshPostData : ');
-                            console.log(refreshPostData);
-
-                            var refreshOptions = {
-                                    hostname: CONF.api_domain,
-                                    port: (CONF.api_protocol == 'https' ? 443 : 80),
-                                    path: '/oauth/token',
-                                    headers: {
-                                        'host': CONF.api_domain,
-                                        'Content-Length': Buffer.byteLength(refreshPostData, 'utf8'),
-                                        'Content-Type': 'application/x-www-form-urlencoded'
-                                    },
-                                    method: 'POST'
-                                },
-                                refreshReq = httpModule.request(refreshOptions, function(refreshRes)
-                                {
-                                    var refreshResponse = "";
-                                    refreshRes.setEncoding("utf8");
-                            
-                                    refreshRes.on("data", function(chunk)
-                                    {
-                                        refreshResponse += chunk;
-                                    });
-                            
-                                    refreshRes.on("end", function()
-                                    {
-                                        JSONRefreshResponse = JSON.parse(refreshResponse);
-                            
-                                        console.log('refreshResponse', refreshResponse);
-                                        console.log('JSONRefreshResponse', JSONRefreshResponse);
-                            
-                                        datas.access_token = JSONRefreshResponse.access_token;
-                                        datas.refresh_token = JSONRefreshResponse.refresh_token;
-                            
-                                        // response.setCookie("at", JSONRefreshResponse.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                                        // response.setCookie("rt", JSONRefreshResponse.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                            
-                                        
-                                    });
-                                });
-
-                            refreshReq.write(refreshPostData);
-                            refreshReq.end();
-                        }
-                        /**
-                         *
-                         * CALL API SUCCEEDED, PRINTING RESPONSE
-                         *
-                        **/
-                        else
-                        {
-                            datas.api_call_return = JSONResponse;
-                            datas.api_call_return_str = JSON.stringify(JSONResponse);
-
-                            response.emit('render', {
-                                'status': 200,
-                                'template': 'index.html',
-                                'datas': datas
-                            });
-                        }
-                    });
-                });
-
-            console.log('##################################');
-            console.log(postData);
-            console.log('##################################');
-
-            req.write(postData);
-            req.end();
-        }
     },
     _404Controller: function(request, response)
     {

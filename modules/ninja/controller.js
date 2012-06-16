@@ -30,6 +30,12 @@ var Controller = function()
 
         response.on('render', function(controllerDatas)
         {
+            if (controllerDatas.status == 302)
+            {
+                response.writeHead(302, controllerDatas.headers);
+                return response.end();
+            }
+
             if (this.name != '_staticController')
             {
                 var CONFDatas = {};

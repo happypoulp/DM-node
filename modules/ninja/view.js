@@ -6,6 +6,7 @@ swig.init({
     allowErrors: true,
     autoescape: true,
     encoding: 'utf8',
+    cache: false,
     filters: {},
     root: global.CONF ? CONF.templateRoot : '/',
     tags: {},

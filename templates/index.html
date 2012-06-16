@@ -1,27 +1,11 @@
 {% extends 'layout.html' %}
 
-{% block title %}Home - Dailymotion API demo{% endblock %}
+{% block title %}Home - Daily API demo{% endblock %}
 
 {% block content %}
     <h2>Testing <span class="label">Local app test</span> from user <a href="http://www.dailymotion.com/bonnefon">bonnefon</a></h2>
-    <ol>
-        {% if not access_token %}
-            <li>
-                Get code for access token :
-                <a href="{{ api_protocol }}://{{ api_domain }}/oauth/authorize?response_type=code&client_id={{ api_key }}&redirect_uri=http%3A%2F%2F{{ serverURL }}%2Foauth_success&scope=read+write">
-                    start
-                </a>.
-                <br />
-                <small>
-                    ({{ api_protocol }}://{{ api_domain }}/oauth/authorize?response_type=code&client_id={{ api_key }}&redirect_uri=http%3A%2F%2F{{ serverURL }}%2Foauth_success&scope=read+write)
-                </small>
-            </li>
-        {% endif %}
-        {% if code_access_token %}
-            <li>
-                Code for Access Token : <small>{{ code_access_token }}</small>. <a href="/get_access_token?{{ access_token_query_params }}">Get access token.</a>
-            </li>
-        {% else if access_token %}
+    {% if access_token %}
+        <ol>
             <li>
                 Access Token : <small>{{ access_token }}</small>.
             </li>
@@ -30,22 +14,21 @@
                     Refresh Token : <small>{{ refresh_token }}</small>.
                 </li>
             {% endif %}
+            {% if expires_at %}
+                <li>
+                    Expires at : <small>{{ expires_at }}</small>.
+                </li>
+            {% endif %}
             <li>
                 Reset : <a href="/reset">remove access token</a>.
             </li>
-        {% else %}
-            <li>
-                ...
-            </li>
-        {% endif %}
-    </ol>
+        </ol>
 
-    {% if access_token %}
         <div class="api_actions">
             <h3>Now let's play! We could...</h3>
             <span class="api_action">... echo "This is a useless message..." : </span>
-            <a href="/api_action?call={{ actions.testecho.call|url_encode }}&args={{ actions.testecho.args|url_encode }}">Make my day!</a>
-            {% if call == 'test.echo' %}
+            <a href="/api_action?call=testecho">Make my day!</a>
+            {% if call == 'testecho' %}
                 <div class="api_call_return">
                     <div class="api_call_raw">
                         API call response : <small>{{ api_call_return_str }}</small>
@@ -59,8 +42,8 @@
             {% endif %}
 
             <span class="api_action">... get the list of bonnefon's videos?</span>
-            <a href="/api_action?call={{ actions.videolist.call|url_encode }}&args={{ actions.videolist.args|url_encode }}">Let's do that!</a>
-            {% if call == 'video.list' %}
+            <a href="/api_action?call=videolist">Let's do that!</a>
+            {% if call == 'videolist' %}
                 <div class="api_call_return">
                     <div class="api_call_raw">
                         API call response : <small>{{ api_call_return_str }}</small>
@@ -74,8 +57,8 @@
             {% endif %}
 
             <span class="api_action">... get infos for video "xf3tgr"?</span>
-            <a href="/api_action?call={{ actions.videoinfo.call|url_encode }}&args={{ actions.videoinfo.args|url_encode }}">It looks fun!</a>
-                {% if call == 'video.info' %}
+            <a href="/api_action?call=videoinfo">It looks fun!</a>
+                {% if call == 'videoinfo' %}
                     <div class="api_call_return">
                         <div class="api_call_raw">
                             API call response : <small>{{ api_call_return_str }}</small>
@@ -96,8 +79,8 @@
                 {% endif %}
 
             <span class="api_action">... edit title of video "xf3tgr?</span>
-            <a href="/api_action?call={{ actions.videoedit.call|url_encode }}&args={{ actions.videoedit.args|url_encode }}">What a good idea!</a>
-            {% if call == 'video.edit' %}
+            <a href="/api_action?call=videoedit">What a good idea!</a>
+            {% if call == 'videoedit' %}
                 <div class="api_call_return">
                     <div class="api_call_raw">
                         API call response : <small>{{ api_call_return_str }}</small>

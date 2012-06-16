@@ -34,15 +34,16 @@ var StaticView = function()
                 return this.onError();
             }
 
-            var readStream = fs.createReadStream(this.filename, {
-                encoding: 'utf8'
-            });
+            var extension = this.filename.replace(/.+\.([a-z]+)$/, '$1'),
+                readStream = fs.createReadStream(this.filename, extension.match(/png|ico|jpg|gif/) ? null : {
+                        encoding: 'utf8'
+                    });
 
             readStream.on('error', this.onError);
 
             readStream.once('open', function ()
             {
-                var contentType = {'css': 'text/css', 'js': 'text/javascript', 'png': 'image/png', 'jpg': 'image/jpg', 'gif': 'image/gif'}[this.filename.replace(/.+\.([a-z]+)$/, '$1')] || 'text/html';
+                var contentType = {'css': 'text/css', 'js': 'text/javascript', 'png': 'image/ico', 'ico': 'image/png', 'jpg': 'image/jpg', 'gif': 'image/gif'}[extension] || 'text/html';
 
                 this.response.writeHead(200, {
                     "Content-Type": contentType
