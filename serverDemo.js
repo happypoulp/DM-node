@@ -27,7 +27,7 @@ secret = secret || (process.argv[3].match(/key=/) ? process.argv[3].replace(/key
 
 global.CONF = {
     serverHost: '127.0.0.1',
-    serverPort: 8000,
+    serverPort: process.env.PORT || 8000,
     templateRoot: root + '/templates/',
     staticRoot: root,
 
