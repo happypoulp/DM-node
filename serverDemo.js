@@ -15,18 +15,17 @@
 **************************************************/
 var root = process.cwd(),
     key = process.env.DM_API_KEY,
-    secret = process.env.DM_API_SECRET;
+    secret = process.env.DM_API_SECRET,
+    redirectBaseUrl = process.env.DM_API_REDIRECT_BASE_URL;
 
-if (!key && !secret && (process.argv.length <= 2 || !process.argv[2].match(/key=|secret=/) || !process.argv[3].match(/key=|secret=/)))
+if (!key && !secret && !redirect_uri)
 {
-    return console.log('Usage: node serverDemo.js key=<api_key> secret=<api_secret>');
+    return console.log('Usage: node serverDemo.js / with env variables : DM_API_KEY, DM_API_SECRET, DM_API_REDIRECTURI');
 }
-
-key = key || (process.argv[2].match(/key=/) ? process.argv[2].replace(/key=/, '') : process.argv[3].replace(/secret=/, '')),
-secret = secret || (process.argv[3].match(/key=/) ? process.argv[3].replace(/key=/, '') : process.argv[3].replace(/secret=/, ''));
 
 global.CONF = {
     serverHost: '127.0.0.1',
+    redirectBaseUrl: redirectBaseUrl || 'http://127.0.0.1:8000',
     serverPort: process.env.PORT || 8000,
     templateRoot: root + '/templates/',
     staticRoot: root,
@@ -150,7 +149,7 @@ var CONTROLLERS = {
     },
     login : function(request, response)
     {
-        baseDatas.authorize_url = dm.get_authorize_url('http://'+ CONF.serverURL + '/oauth_success', ['read', 'write']);
+        baseDatas.authorize_url = dm.get_authorize_url(CONF.redirectBaseUrl + '/oauth_success', ['read', 'write']);
 
         response.emit('render', {
             status: 200,
