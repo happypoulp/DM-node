@@ -13,15 +13,17 @@
  * GLOBAL CONFIGURATION
  *
 **************************************************/
-var root = process.cwd(); 
+var root = process.cwd(),
+    key = process.env.DM_API_KEY,
+    secret = process.env.DM_API_SECRET;
 
-if (process.argv.length <= 2 || !process.argv[2].match(/key=|secret=/) || !process.argv[3].match(/key=|secret=/))
+if (!key && !secret && (process.argv.length <= 2 || !process.argv[2].match(/key=|secret=/) || !process.argv[3].match(/key=|secret=/)))
 {
     return console.log('Usage: node serverDemo.js key=<api_key> secret=<api_secret>');
 }
 
-var key = process.argv[2].match(/key=/) ? process.argv[2].replace(/key=/, '') : process.argv[3].replace(/secret=/, ''),
-    secret = process.argv[3].match(/key=/) ? process.argv[3].replace(/key=/, '') : process.argv[3].replace(/secret=/, '');
+key = key || (process.argv[2].match(/key=/) ? process.argv[2].replace(/key=/, '') : process.argv[3].replace(/secret=/, '')),
+secret = secret || (process.argv[3].match(/key=/) ? process.argv[3].replace(/key=/, '') : process.argv[3].replace(/secret=/, ''));
 
 global.CONF = {
     serverHost: '127.0.0.1',
