@@ -3,7 +3,7 @@
 {% block title %}Home - Daily API demo{% endblock %}
 
 {% block content %}
-    <h2>Testing <span class="label">Local app test</span> from user <a href="http://www.dailymotion.com/bonnefon">bonnefon</a></h2>
+    <h2><span class="label">Dailymotion API demo</span> with user <a href="http://www.dailymotion.com/{{ username }}">{{ username }}</a></h2>
     {% if access_token %}
         <ol>
             <li>
@@ -41,7 +41,7 @@
                 <div></div>
             {% endif %}
 
-            <span class="api_action">... get the list of bonnefon's videos?</span>
+            <span class="api_action">... get the list of your videos?</span>
             <a href="/api_action?call=videolist">Let's do that!</a>
             {% if call == 'videolist' %}
                 <div class="api_call_return">

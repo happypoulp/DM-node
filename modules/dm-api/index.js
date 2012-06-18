@@ -108,7 +108,7 @@ var DM = function()
                     port: (this.port == 'https' ? 443 : 80),
                     path: '/oauth/token',
                     headers: {
-                        'host': this.port,
+                        'host': this.domain,
                         'Content-Length': Buffer.byteLength(postData, 'utf8'),
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
@@ -119,6 +119,8 @@ var DM = function()
                     var response = "";
                     res.setEncoding("utf8");
             
+                    console.log('RESPONSE');
+
                     res.on("data", function(chunk)
                     {
                         response += chunk;
@@ -135,6 +137,11 @@ var DM = function()
                     });
                 });
 
+            req.on('error', function(e)
+            {
+                console.log('problem with request: ' + e.message);
+            });
+
             req.write(postData);
             req.end();
         }
@@ -146,11 +153,11 @@ var DM = function()
             method_call = arguments.callee,
             method_args = arguments,
             options = {
-                hostname: CONF.api_domain,
-                port: (CONF.api_protocol == 'https' ? 443 : 80),
+                hostname: this.domain,
+                port: (this.protocol == 'https' ? 443 : 80),
                 path: '/json',
                 headers: {
-                    'host': CONF.api_domain,
+                    'host': this.domain,
                     'Content-Length': Buffer.byteLength(postData, 'utf8'),
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'Authorization': 'OAuth ' + this.access_token
@@ -189,8 +196,9 @@ var DM = function()
                         console.log('ERROR', JSONResponse.error);
                         this.refresh_access_token(this.refresh_token, function()
                         {
-                            method_call.call(arguments);
-                        });
+                            console.log('Replay api request...');
+                            method_call.apply(this, arguments);
+                        }.bind(this));
                     }
                     /**
                      *
@@ -201,9 +209,9 @@ var DM = function()
                     {
                         callback(JSONResponse);
                     }
-                });
+                }.bind(this));
 
-            });
+            }.bind(this));
 
         req.on('error', function(e)
         {
