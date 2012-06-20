@@ -105,7 +105,7 @@ var DM = function()
 
             var options = {
                     hostname: this.domain,
-                    port: (this.port == 'https' ? 443 : 80),
+                    port: this.port,
                     path: '/oauth/token',
                     headers: {
                         'host': this.domain,
@@ -119,8 +119,6 @@ var DM = function()
                     var response = "";
                     res.setEncoding("utf8");
             
-                    console.log('RESPONSE');
-
                     res.on("data", function(chunk)
                     {
                         response += chunk;
