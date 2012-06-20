@@ -132,8 +132,8 @@ var DM = function()
                         console.log('JSONResponse', JSONResponse);
 
                         callback(JSONResponse);
-                    });
-                });
+                    }.bind(this));
+                }.bind(this));
 
             req.on('error', function(e)
             {
