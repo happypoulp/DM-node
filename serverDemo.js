@@ -175,38 +175,60 @@ var CONTROLLERS = {
             });
         });
     },
+    get_grants: function(request)
+    {
+        return {
+            access_token: request.getCookie("at"),
+            refresh_token: request.getCookie("rt"),
+            expires_at: this.get_expires_at(request)
+        };
+    }.
+    set_new_grants: function(response, grants)
+    {
+        if (!grants)
+        {
+            return;
+        }
+
+        console.log(grants);
+
+        if (grants)
+        {
+            if (grants.access_token)
+            {
+                response.setCookie("at", grants.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+            if (grants.refresh_token)
+            {
+                response.setCookie("rt", grants.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+            if (grants.expires_in)
+            {
+                response.setCookie("ei", new Date().getTime() + grants.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+        }
+    },
+    get_expires_at: function(request)
+    {
+        var currentDate = new Date();
+        currentDate.setTime(parseInt(request.getCookie('ei')));
+        return currentDate.toString();
+    },
+    call: function(request, response, call_parameters, callback)
+    {
+        getDM(request).call(call_parameters, function(datas, grants)
+        {
+            this.set_new_grants(response, grants);
+
+            callback();
+        });
+    },
     api_action: function(request, response)
     {
         if (request.GETS.call && baseDatas.actions[request.GETS.call])
         {
-            getDM(request).call(baseDatas.actions[request.GETS.call], function(datas)
+            this.call(request, response, baseDatas.actions[request.GETS.call], function()
             {
-                var access_token = request.getCookie("at");
-                refresh_token = request.getCookie("rt");
-                expires_in = request.getCookie("ei");
-
-                console.log(datas);
-
-                if (datas.access_token)
-                {
-                    access_token = datas.access_token;
-                    response.setCookie("at", access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                }
-                if (datas.refresh_token)
-                {
-                    refresh_token = datas.refresh_token;
-                    response.setCookie("rt", refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                }
-                if (datas.expires_in)
-                {
-                    expires_in = datas.expires_in;
-                    response.setCookie("ei", new Date().getTime() + expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
-                }
-
-                var currentDate = new Date();
-                currentDate.setTime(parseInt(request.getCookie('ei')));
-                expires_at = currentDate.toString();
-
                 response.emit('render', {
                     'status': 200,
                     'template': 'index.html',
@@ -214,9 +236,7 @@ var CONTROLLERS = {
                         call: request.GETS.call,
                         api_call_return: JSONResponse,
                         api_call_return_str: JSON.stringify(JSONResponse),
-                        access_token: access_token,
-                        refresh_token: refresh_token,
-                        expires_at: expires_at
+                        grants: this.get_grants(request)
                     }
                 });
             });
@@ -228,6 +248,8 @@ var CONTROLLERS = {
 
         response.clearCookie('at');
         response.clearCookie('rt');
+        response.clearCookie('ie');
+        response.clearCookie('user');
 
         response.emit('render', {
             status: 302,

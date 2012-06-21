@@ -9,6 +9,7 @@ var DM = function()
     this.protocol = 'https';
     this.port = 443;
     this.http_mod = https;
+    this.grants_updated = true;
 
     this.set_access_token = function(access_token)
     {
@@ -100,9 +101,6 @@ var DM = function()
                 },
                 postData = querystring.stringify(call);
 
-            console.log('postData : ');
-            console.log(postData);
-
             var options = {
                     hostname: this.domain,
                     port: this.port,
@@ -127,11 +125,13 @@ var DM = function()
                     res.on("end", function()
                     {
                         JSONResponse = JSON.parse(response);
-            
-                        console.log('response', response);
-                        console.log('JSONResponse', JSONResponse);
+                        this.grants_updated = true;
 
-                        callback(JSONResponse);
+                        this.set_access_token(JSONResponse.access_token);
+                        this.set_refresh_token(JSONResponse.refresh_token);
+                        this.set_expires_in(JSONResponse.expires_in);
+
+                        callback();
                     }.bind(this));
                 }.bind(this));
 
@@ -146,6 +146,13 @@ var DM = function()
     };
 
     this.call = function(call, callback)
+    {
+        this.grants_updated = false;
+
+        this._call(call, callback);
+    }
+
+    this._call = function(call, callback)
     {
         var postData = JSON.stringify(call),
             method_call = arguments.callee,
@@ -191,11 +198,10 @@ var DM = function()
                     **/
                     if (JSONResponse.error && res.headers['www-authenticate'].match(/error="(expired_token|invalid_token)"/))
                     {
-                        console.log('ERROR', JSONResponse.error);
                         this.refresh_access_token(this.refresh_token, function()
                         {
                             console.log('Replay api request...');
-                            method_call.apply(this, arguments);
+                            method_call.apply(this, method_args);
                         }.bind(this));
                     }
                     /**
@@ -205,7 +211,17 @@ var DM = function()
                     **/
                     else
                     {
-                        callback(JSONResponse);
+                        var grants = null;
+
+                        if (this.grants_updated)
+                        {
+                            grants = {
+                                access_token: this.access_token,
+                                refresh_token: this.refresh_token,
+                                expires_in: this.expires_in
+                            }
+                        }
+                        callback(JSONResponse, grants);
                     }
                 }.bind(this));
 
