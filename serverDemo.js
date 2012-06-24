@@ -107,7 +107,7 @@ var dm = DM.new().init({
 });
 
 var Utilities = {
-    getDM: function(request)
+    get_dm: function(request)
     {
         return dm.with_grants(request);
     },
@@ -119,9 +119,9 @@ var Utilities = {
     },
     call: function(request, response, call_parameters, callback)
     {
-        getDM(request).call(call_parameters, function(datas, grants)
+        Utilities.get_dm(request).call(call_parameters, function(datas, grants)
         {
-            this.set_new_grants(response, grants);
+            this.set_new_grants(response, grants); // TODO : do this differently
 
             callback();
         });
@@ -140,9 +140,7 @@ var CONTROLLERS = {
 
         datas.access_token = request.getCookie("at");
         datas.refresh_token = request.getCookie("rt");
-        var currentDate = new Date();
-        currentDate.setTime(parseInt(request.getCookie("ei")));
-        datas.expires_at = currentDate.toString();
+        datas.expires_at = Utilities.get_expires_at(request);
 
         if (!datas.access_token)
         {
@@ -195,7 +193,7 @@ var CONTROLLERS = {
         if (request.GETS.call && baseDatas.actions[request.GETS.call])
         {
             // TODO: return request or response of call and register req/res.on("error", f(){if expired, refresh, else print error})
-            this.call(request, response, baseDatas.actions[request.GETS.call], function()
+            Utilities.call(request, response, baseDatas.actions[request.GETS.call], function()
             {
                 response.emit('render', {
                     'status': 200,
