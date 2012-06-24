@@ -11,6 +11,50 @@ var DM = function()
     this.http_mod = https;
     this.grants_updated = true;
 
+    this.with_grants = function(request)
+    {
+        this.set_access_token(request.getCookie('at'))
+            .set_refresh_token(request.getCookie('rt'))
+            .set_expires_in(request.getCookie('ei'))
+
+        return this;
+    };
+
+    this.get_grants = function(request)
+    {
+        return {
+            access_token: request.getCookie("at"),
+            refresh_token: request.getCookie("rt"),
+            expires_at: this.get_expires_at(request)
+        };
+    };
+
+    set_new_grants: function(response, grants)
+    {
+        if (!grants)
+        {
+            return;
+        }
+
+        console.log(grants);
+
+        if (grants)
+        {
+            if (grants.access_token)
+            {
+                response.setCookie("at", grants.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+            if (grants.refresh_token)
+            {
+                response.setCookie("rt", grants.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+            if (grants.expires_in)
+            {
+                response.setCookie("ei", new Date().getTime() + grants.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            }
+        }
+    },
+
     this.set_access_token = function(access_token)
     {
         this.access_token = access_token;

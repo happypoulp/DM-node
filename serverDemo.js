@@ -106,12 +106,27 @@ var dm = DM.new().init({
     client_secret: secret
 });
 
-function getDM(request)
-{
-    return dm.set_access_token(request.getCookie('at'))
-        .set_refresh_token(request.getCookie('rt'))
-        .set_expires_in(request.getCookie('ei'));
-}
+var Utilities = {
+    getDM: function(request)
+    {
+        return dm.with_grants(request);
+    },
+    get_expires_at: function(request)
+    {
+        var currentDate = new Date();
+        currentDate.setTime(parseInt(request.getCookie('ei')));
+        return currentDate.toString();
+    },
+    call: function(request, response, call_parameters, callback)
+    {
+        getDM(request).call(call_parameters, function(datas, grants)
+        {
+            this.set_new_grants(response, grants);
+
+            callback();
+        });
+    }
+};
 
 /*************************************************
  *
@@ -175,58 +190,11 @@ var CONTROLLERS = {
             });
         });
     },
-    get_grants: function(request)
-    {
-        return {
-            access_token: request.getCookie("at"),
-            refresh_token: request.getCookie("rt"),
-            expires_at: this.get_expires_at(request)
-        };
-    }.
-    set_new_grants: function(response, grants)
-    {
-        if (!grants)
-        {
-            return;
-        }
-
-        console.log(grants);
-
-        if (grants)
-        {
-            if (grants.access_token)
-            {
-                response.setCookie("at", grants.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-            }
-            if (grants.refresh_token)
-            {
-                response.setCookie("rt", grants.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-            }
-            if (grants.expires_in)
-            {
-                response.setCookie("ei", new Date().getTime() + grants.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
-            }
-        }
-    },
-    get_expires_at: function(request)
-    {
-        var currentDate = new Date();
-        currentDate.setTime(parseInt(request.getCookie('ei')));
-        return currentDate.toString();
-    },
-    call: function(request, response, call_parameters, callback)
-    {
-        getDM(request).call(call_parameters, function(datas, grants)
-        {
-            this.set_new_grants(response, grants);
-
-            callback();
-        });
-    },
     api_action: function(request, response)
     {
         if (request.GETS.call && baseDatas.actions[request.GETS.call])
         {
+            // TODO: return request or response of call and register req/res.on("error", f(){if expired, refresh, else print error})
             this.call(request, response, baseDatas.actions[request.GETS.call], function()
             {
                 response.emit('render', {
