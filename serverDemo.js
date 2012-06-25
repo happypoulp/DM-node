@@ -109,22 +109,7 @@ var dm = DM.new().init({
 var Utilities = {
     get_dm: function(request)
     {
-        return dm.with_grants(request);
-    },
-    get_expires_at: function(request)
-    {
-        var currentDate = new Date();
-        currentDate.setTime(parseInt(request.getCookie('ei')));
-        return currentDate.toString();
-    },
-    call: function(request, response, call_parameters, callback)
-    {
-        Utilities.get_dm(request).call(call_parameters, function(datas, grants)
-        {
-            this.set_new_grants(response, grants); // TODO : do this differently
-
-            callback();
-        });
+        return dm.set_grants_from_request(request);
     }
 };
 
@@ -136,13 +121,12 @@ var Utilities = {
 var CONTROLLERS = {
     index : function(request, response)
     {
-        var datas = baseDatas;
+        var datas = baseDatas,
+            grants = dm.get_grants_from_request(request);
 
-        datas.access_token = request.getCookie("at");
-        datas.refresh_token = request.getCookie("rt");
-        datas.expires_at = Utilities.get_expires_at(request);
+        datas.grants = grants;
 
-        if (!datas.access_token)
+        if (!datas.grants.access_token)
         {
             response.emit('render', {
                 'status': 302,
@@ -176,9 +160,7 @@ var CONTROLLERS = {
     {
         dm.get_access_token(request.GETS, function(datas)
         {
-            response.setCookie("at", datas.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-            response.setCookie("rt", datas.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
-            response.setCookie("ei", new Date().getTime() + datas.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+            dm.update_grants(datas, response);
 
             response.emit('render', {
                 status: 302,
@@ -192,9 +174,11 @@ var CONTROLLERS = {
     {
         if (request.GETS.call && baseDatas.actions[request.GETS.call])
         {
-            // TODO: return request or response of call and register req/res.on("error", f(){if expired, refresh, else print error})
-            Utilities.call(request, response, baseDatas.actions[request.GETS.call], function()
+            // TODO BETTER : return request or response of call and register req/res.on("error", f(){if expired, refresh, else print error})
+            Utilities.get_dm(request).call(baseDatas.actions[request.GETS.call], function(datas, grants)
             {
+                dm.update_grants(grants, response);
+
                 response.emit('render', {
                     'status': 200,
                     'template': 'index.html',
@@ -202,7 +186,7 @@ var CONTROLLERS = {
                         call: request.GETS.call,
                         api_call_return: JSONResponse,
                         api_call_return_str: JSON.stringify(JSONResponse),
-                        grants: this.get_grants(request)
+                        grants: dm.get_grants_from_request(request)
                     }
                 });
             });

@@ -11,25 +11,37 @@ var DM = function()
     this.http_mod = https;
     this.grants_updated = true;
 
-    this.with_grants = function(request)
+    this.get_expires_at = function(expires_in)
+    {
+        if (expires_in)
+        {
+            var currentDate = new Date();
+            currentDate.setTime(parseInt(expires_in));
+            return currentDate.toString();
+        }
+
+        return null;
+    };
+
+    this.set_grants_from_request = function(request)
     {
         this.set_access_token(request.getCookie('at'))
             .set_refresh_token(request.getCookie('rt'))
-            .set_expires_in(request.getCookie('ei'))
+            .set_expires_in(request.getCookie('ei'));
 
         return this;
     };
 
-    this.get_grants = function(request)
+    this.get_grants_from_request = function(request)
     {
         return {
             access_token: request.getCookie("at"),
             refresh_token: request.getCookie("rt"),
-            expires_at: this.get_expires_at(request)
+            expires_at: this.get_expires_at(request.getCookie('ei'))
         };
     };
 
-    set_new_grants: function(response, grants)
+    this.update_grants = function(grants, response)
     {
         if (!grants)
         {
@@ -42,18 +54,21 @@ var DM = function()
         {
             if (grants.access_token)
             {
-                response.setCookie("at", grants.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                this.set_access_token(grants.access_token);
+                response && response.setCookie("at", grants.access_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
             }
             if (grants.refresh_token)
             {
-                response.setCookie("rt", grants.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                this.set_refresh_token(grants.refresh_token);
+                response && response.setCookie("rt", grants.refresh_token, {expires: new Date().getTime() + (1000*60*60*24*365)});
             }
             if (grants.expires_in)
             {
-                response.setCookie("ei", new Date().getTime() + grants.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
+                this.set_expires_in(grants.expires_in);
+                response && response.setCookie("ei", new Date().getTime() + grants.expires_in*1000, {expires: new Date().getTime() + (1000*60*60*24*365)});
             }
         }
-    },
+    };
 
     this.set_access_token = function(access_token)
     {
@@ -193,7 +208,7 @@ var DM = function()
     {
         this.grants_updated = false;
 
-        this._call(call, callback);
+        return this._call(call, callback);
     }
 
     this._call = function(call, callback)
@@ -242,6 +257,7 @@ var DM = function()
                     **/
                     if (JSONResponse.error && res.headers['www-authenticate'].match(/error="(expired_token|invalid_token)"/))
                     {
+                        console.log('### TOKEN EXPIRED ### - trying to refresh it');
                         this.refresh_access_token(this.refresh_token, function()
                         {
                             console.log('Replay api request...');
@@ -279,6 +295,8 @@ var DM = function()
         // write data to request body
         req.write(postData);
         req.end();
+
+        return req;
     };
 
     this.init = function(options)

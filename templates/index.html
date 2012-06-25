@@ -4,19 +4,19 @@
 
 {% block content %}
     <h2><span class="label">Dailymotion API demo</span> with user <a href="http://www.dailymotion.com/{{ username }}">{{ username }}</a></h2>
-    {% if access_token %}
+    {% if grants.access_token %}
         <ol>
             <li>
-                Access Token : <small>{{ access_token }}</small>.
+                Access Token : <small>{{ grants.access_token }}</small>.
             </li>
-            {% if refresh_token %}
+            {% if grants.refresh_token %}
                 <li>
-                    Refresh Token : <small>{{ refresh_token }}</small>.
+                    Refresh Token : <small>{{ grants.refresh_token }}</small>.
                 </li>
             {% endif %}
-            {% if expires_at %}
+            {% if grants.expires_at %}
                 <li>
-                    Expires at : <small>{{ expires_at }}</small>.
+                    Expires at : <small>{{ grants.expires_at }}</small>.
                 </li>
             {% endif %}
             <li>
