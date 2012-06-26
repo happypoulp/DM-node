@@ -137,11 +137,38 @@ var CONTROLLERS = {
         }
         else
         {
-            response.emit('render', {
-                'status': 200,
-                'template': 'index.html',
-                'datas': datas
-            });
+            var login = request.getCookie('user');
+
+            if (login)
+            {
+                datas['user'] = login;
+
+                response.emit('render', {
+                    'status': 200,
+                    'template': 'index.html',
+                    'datas': datas
+                });
+            }
+            else
+            {
+                Utilities.get_dm(request).call(
+                    {call: '/user/me?fields=username'},
+                    function(d, grants)
+                    {
+                        console.log(d);
+                        dm.update_grants(grants, response);
+
+                        response.setCookie("user", d.result.username, {expires: new Date().getTime() + (1000*60*60*24*365)})
+                        datas['user'] = d.result.username;
+
+                        response.emit('render', {
+                            'status': 200,
+                            'template': 'index.html',
+                            'datas': datas
+                        });
+                    }
+                );
+            }
         }
     },
     login : function(request, response)
@@ -172,24 +199,27 @@ var CONTROLLERS = {
     },
     api_action: function(request, response)
     {
-        if (request.GETS.call && baseDatas.actions[request.GETS.call])
+        if (request.GETS.call)
         {
             // TODO BETTER : return request or response of call and register req/res.on("error", f(){if expired, refresh, else print error})
-            Utilities.get_dm(request).call(baseDatas.actions[request.GETS.call], function(datas, grants)
-            {
-                dm.update_grants(grants, response);
+            Utilities.get_dm(request).call(
+                baseDatas.actions[request.GETS.call] || {call: request.GETS.call},
+                function(datas, grants)
+                {
+                    dm.update_grants(grants, response);
 
-                response.emit('render', {
-                    'status': 200,
-                    'template': 'index.html',
-                    'datas': {
-                        call: request.GETS.call,
-                        api_call_return: JSONResponse,
-                        api_call_return_str: JSON.stringify(JSONResponse),
-                        grants: dm.get_grants_from_request(request)
-                    }
-                });
-            });
+                    response.emit('render', {
+                        'status': 200,
+                        'template': 'index.html',
+                        'datas': {
+                            call: request.GETS.call,
+                            api_call_return: JSONResponse,
+                            api_call_return_str: JSON.stringify(JSONResponse),
+                            grants: dm.get_grants()
+                        }
+                    });
+                }
+            );
         }
     },
     reset : function(request, response)

@@ -3,7 +3,7 @@
 {% block title %}Home - Daily API demo{% endblock %}
 
 {% block content %}
-    <h2><span class="label">Dailymotion API demo</span> with user <a href="http://www.dailymotion.com/{{ username }}">{{ username }}</a></h2>
+    <h2><span class="label">Dailymotion API demo</span> with user <a href="http://www.dailymotion.com/{{ user }}">{{ user }}</a></h2>
     {% if grants.access_token %}
         <ol>
             <li>
@@ -78,9 +78,29 @@
                     <div></div>
                 {% endif %}
 
-            <span class="api_action">... edit title of video "xf3tgr?</span>
+            <span class="api_action">... edit title of video "xf3tgr"?</span>
             <a href="/api_action?call=videoedit">What a good idea!</a>
             {% if call == 'videoedit' %}
+                <div class="api_call_return">
+                    <div class="api_call_raw">
+                        API call response : <small>{{ api_call_return_str }}</small>
+                    </div>
+                    <div class="api_call_result">
+                        API call result : <small>{{ api_call_return.result }}</small>
+                    </div>
+                </div>
+            {% else %}
+                <div></div>
+            {% endif %}
+
+            <span class="api_action">
+                ... get
+                <form style="display: inline;" method="get" action="/api_action">
+                    <input type="text" name="call" value="/user/me"/>
+                    <input type="submit" value="go"/>
+                </form>
+            </span>
+            {% if call == "/user/me" %}
                 <div class="api_call_return">
                     <div class="api_call_raw">
                         API call response : <small>{{ api_call_return_str }}</small>

@@ -32,6 +32,15 @@ var DM = function()
         return this;
     };
 
+    this.get_grants = function()
+    {
+        return {
+            access_token: this.access_token,
+            refresh_token: this.refresh_token,
+            expires_at: this.get_expires_at(this.expires_in)
+        };
+    };
+
     this.get_grants_from_request = function(request)
     {
         return {
@@ -213,6 +222,7 @@ var DM = function()
 
     this._call = function(call, callback)
     {
+        console.log(JSON.stringify(call));
         var postData = JSON.stringify(call),
             method_call = arguments.callee,
             method_args = arguments,
