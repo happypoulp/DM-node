@@ -55,7 +55,8 @@ var ROUTES = {
     '/login': 'login',
     '/reset': 'reset',
     '/oauth_success': 'oauth_success',
-    '/api_action': 'api_action'
+    '/api': 'api',
+    '/test_api': 'test_api'
 };
 
 
@@ -121,10 +122,9 @@ var Utilities = {
 var CONTROLLERS = {
     index : function(request, response)
     {
-        var datas = baseDatas,
-            grants = dm.get_grants_from_request(request);
+        var datas = baseDatas;
 
-        datas.grants = grants;
+        datas.grants = dm.get_grants_from_request(request);
 
         if (!datas.grants.access_token)
         {
@@ -153,13 +153,13 @@ var CONTROLLERS = {
             {
                 Utilities.get_dm(request).call(
                     {call: '/user/me?fields=username'},
-                    function(d, grants)
+                    function(user_datas, grants)
                     {
-                        console.log(d);
+                        // console.log(user_datas);
                         dm.update_grants(grants, response);
 
-                        response.setCookie("user", d.result.username, {expires: new Date().getTime() + (1000*60*60*24*365)})
-                        datas['user'] = d.result.username;
+                        response.setCookie("user", user_datas.username, {expires: new Date().getTime() + (1000*60*60*24*365)})
+                        datas['user'] = user_datas.username;
 
                         response.emit('render', {
                             'status': 200,
@@ -173,7 +173,21 @@ var CONTROLLERS = {
     },
     login : function(request, response)
     {
-        baseDatas.authorize_url = dm.get_authorize_url(CONF.redirectBaseUrl + '/oauth_success', ['read', 'write']);
+        baseDatas.authorize_url = dm.get_authorize_url(
+            CONF.redirectBaseUrl + '/oauth_success',
+            [
+                'email',
+                'userinfo',
+                'manage_videos',
+                'manage_comments',
+                'manage_playlists',
+                'manage_tiles',
+                'manage_subscriptions',
+                'manage_friends',
+                'manage_favorites',
+                'manage_groups'
+            ]
+        );
 
         response.emit('render', {
             status: 200,
@@ -183,21 +197,7 @@ var CONTROLLERS = {
             }
         });
     },
-    oauth_success : function(request, response)
-    {
-        dm.get_access_token(request.GETS, function(datas)
-        {
-            dm.update_grants(datas, response);
-
-            response.emit('render', {
-                status: 302,
-                'headers': {
-                    'Location': '/'
-                }
-            });
-        });
-    },
-    api_action: function(request, response)
+    api: function(request, response)
     {
         if (request.GETS.call)
         {
@@ -213,14 +213,58 @@ var CONTROLLERS = {
                         'template': 'index.html',
                         'datas': {
                             call: request.GETS.call,
-                            api_call_return: JSONResponse,
-                            api_call_return_str: JSON.stringify(JSONResponse),
+                            api_call_return: datas,
+                            api_call_return_str: JSON.stringify(datas),
                             grants: dm.get_grants()
                         }
                     });
                 }
             );
         }
+    },
+    test_api: function(request, response)
+    {
+        if (request.GETS.call)
+        {
+            Utilities.get_dm(request).call(
+                baseDatas.actions[request.GETS.call] || {call: request.GETS.call},
+                function(datas, grants)
+                {
+                    dm.update_grants(grants, response);
+
+                    response.emit('render', {
+                        'status': 200,
+                        'template': 'test_api.html',
+                        'datas': {
+                            call: request.GETS.call,
+                            api_call_return_str: JSON.stringify(datas),
+                        }
+                    });
+                }
+            );
+        }
+        else
+        {
+            response.emit('render', {
+                'status': 200,
+                'template': 'test_api.html',
+                'datas': {}
+            });
+        }
+    },
+    oauth_success : function(request, response)
+    {
+        dm.get_access_token(request.GETS, function(datas)
+        {
+            dm.update_grants(datas, response);
+
+            response.emit('render', {
+                status: 302,
+                'headers': {
+                    'Location': '/'
+                }
+            });
+        });
     },
     reset : function(request, response)
     {

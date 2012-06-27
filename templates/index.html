@@ -3,7 +3,7 @@
 {% block title %}Home - Daily API demo{% endblock %}
 
 {% block content %}
-    <h2><span class="label">Dailymotion API demo</span> with user <a href="http://www.dailymotion.com/{{ user }}">{{ user }}</a></h2>
+    <h2><span class="label">Dailymotion API demo</span> with user <a target="_blank" href="http://www.dailymotion.com/{{ user }}">{{ user }}</a></h2>
     {% if grants.access_token %}
         <ol>
             <li>
@@ -23,97 +23,97 @@
                 Reset : <a href="/reset">remove access token</a>.
             </li>
         </ol>
-
-        <div class="api_actions">
-            <h3>Now let's play! We could...</h3>
-            <span class="api_action">... echo "This is a useless message..." : </span>
-            <a href="/api_action?call=testecho">Make my day!</a>
-            {% if call == 'testecho' %}
-                <div class="api_call_return">
-                    <div class="api_call_raw">
-                        API call response : <small>{{ api_call_return_str }}</small>
-                    </div>
-                    <div class="api_call_result">
-                        API call result : <small>{{ api_call_return.result.message }}</small>
-                    </div>
-                </div>
-            {% else %}
-                <div></div>
-            {% endif %}
-
-            <span class="api_action">... get the list of your videos?</span>
-            <a href="/api_action?call=videolist">Let's do that!</a>
-            {% if call == 'videolist' %}
-                <div class="api_call_return">
-                    <div class="api_call_raw">
-                        API call response : <small>{{ api_call_return_str }}</small>
-                    </div>
-                    <div class="api_call_result">
-                        API call result : <small>{{ api_call_return.result.list }}</small>
-                    </div>
-                </div>
-            {% else %}
-                <div></div>
-            {% endif %}
-
-            <span class="api_action">... get infos for video "xf3tgr"?</span>
-            <a href="/api_action?call=videoinfo">It looks fun!</a>
-                {% if call == 'videoinfo' %}
-                    <div class="api_call_return">
-                        <div class="api_call_raw">
-                            API call response : <small>{{ api_call_return_str }}</small>
-                        </div>
-                        <div class="api_call_result">
-                            API call result : <small>{{ api_call_return.result }}</small>
-                            <div>
-                                <div>A way to use these datas : </div>
-                                <a href="{{ api_call_return.result.url }}" target="_blank" class="video_item" title="{{ api_call_return.result.description }}">
-                                    <img src="{{ api_call_return.result.thumbnail_large_url }}" width="160"/><br />
-                                    <span>{{ api_call_return.result.title }}</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% else %}
-                    <div></div>
-                {% endif %}
-
-            <span class="api_action">... edit title of video "xf3tgr"?</span>
-            <a href="/api_action?call=videoedit">What a good idea!</a>
-            {% if call == 'videoedit' %}
-                <div class="api_call_return">
-                    <div class="api_call_raw">
-                        API call response : <small>{{ api_call_return_str }}</small>
-                    </div>
-                    <div class="api_call_result">
-                        API call result : <small>{{ api_call_return.result }}</small>
-                    </div>
-                </div>
-            {% else %}
-                <div></div>
-            {% endif %}
-
-            <span class="api_action">
-                ... get
-                <form style="display: inline;" method="get" action="/api_action">
-                    <input type="text" name="call" value="/user/me"/>
-                    <input type="submit" value="go"/>
-                </form>
-            </span>
-            {% if call == "/user/me" %}
-                <div class="api_call_return">
-                    <div class="api_call_raw">
-                        API call response : <small>{{ api_call_return_str }}</small>
-                    </div>
-                    <div class="api_call_result">
-                        API call result : <small>{{ api_call_return.result }}</small>
-                    </div>
-                </div>
-            {% else %}
-                <div></div>
-            {% endif %}
-
-        </div>
     {% endif %}
+
+    <div class="api_actions">
+        <h3>Now let's play! We could...</h3>
+        <span class="api_action">... echo "This is a useless message..." : </span>
+        <a href="/api?call=testecho">Make my day!</a>
+        {% if call == 'testecho' %}
+            <div class="api_call_return">
+                <div class="api_call_raw">
+                    API call response : <small>{{ api_call_return_str }}</small>
+                </div>
+                <div class="api_call_result">
+                    API call result : <small>{{ api_call_return.message }}</small>
+                </div>
+            </div>
+        {% else %}
+            <div></div>
+        {% endif %}
+
+        <span class="api_action">... get the list of your videos?</span>
+        <a href="/api?call=videolist">Let's do that!</a>
+        {% if call == 'videolist' %}
+            <div class="api_call_return">
+                <div class="api_call_raw">
+                    API call response : <small>{{ api_call_return_str }}</small>
+                </div>
+                <div class="api_call_result">
+                    API call result : <small>{{ api_call_return.list }}</small>
+                </div>
+            </div>
+        {% else %}
+            <div></div>
+        {% endif %}
+
+        <span class="api_action">... get infos for video "xf3tgr"?</span>
+        <a href="/api?call=videoinfo">It looks fun!</a>
+            {% if call == 'videoinfo' %}
+                <div class="api_call_return">
+                    <div class="api_call_raw">
+                        API call response : <small>{{ api_call_return_str }}</small>
+                    </div>
+                    <div class="api_call_result">
+                        API call result : <small>{{ api_call_return }}</small>
+                        <div>
+                            <div>A way to use these datas : </div>
+                            <a href="{{ api_call_return.result.url }}" target="_blank" class="video_item" title="{{ api_call_return.result.description }}">
+                                <img src="{{ api_call_return.result.thumbnail_large_url }}" width="160"/><br />
+                                <span>{{ api_call_return.result.title }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div></div>
+            {% endif %}
+
+        <span class="api_action">... edit title of video "xf3tgr"?</span>
+        <a href="/api?call=videoedit">What a good idea!</a>
+        {% if call == 'videoedit' %}
+            <div class="api_call_return">
+                <div class="api_call_raw">
+                    API call response : <small>{{ api_call_return_str }}</small>
+                </div>
+                <div class="api_call_result">
+                    API call result : <small>{{ api_call_return }}</small>
+                </div>
+            </div>
+        {% else %}
+            <div></div>
+        {% endif %}
+
+        <span class="api_action">
+            ... get
+            <form style="display: inline;" method="get" action="/api">
+                <input type="text" name="call" value="/user/me"/>
+                <input type="submit" value="go"/>
+            </form>
+        </span>
+        {% if call == "/user/me" %}
+            <div class="api_call_return">
+                <div class="api_call_raw">
+                    API call response : <small>{{ api_call_return_str }}</small>
+                </div>
+                <div class="api_call_result">
+                    API call result : <small>{{ api_call_return }}</small>
+                </div>
+            </div>
+        {% else %}
+            <div></div>
+        {% endif %}
+
+    </div>
 
 {% endblock %}

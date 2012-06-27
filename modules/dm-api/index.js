@@ -255,7 +255,7 @@ var DM = function()
 
                 res.on("end", function()
                 {
-                    JSONResponse = JSON.parse(responseBody);
+                    var JSONResponse = JSON.parse(responseBody);
 
                     console.log('JSONResponse');
                     console.log(JSONResponse);
@@ -291,7 +291,7 @@ var DM = function()
                                 expires_in: this.expires_in
                             }
                         }
-                        callback(JSONResponse, grants);
+                        callback(JSONResponse.result, grants);
                     }
                 }.bind(this));
 

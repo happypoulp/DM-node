@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+
+{% block title %}Home - Daily API demo{% endblock %}
+
+{% block content %}
+    <div class="api_actions">
+        <span class="api_action">
+            ... get
+            <form style="display: inline;" method="get" action="/test_api">
+                <input type="text" name="call" value="{{ call }}" style="display: inline-block; width: 400px;"/>
+                <input type="submit" value="go"/>
+            </form>
+        </span>
+        {% if api_call_return_str %}
+            <div class="api_call_return">
+                <div class="api_call_raw">
+                    API call response : <small>{{ api_call_return_str }}</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
