@@ -19,7 +19,7 @@ var root = process.cwd(),
     secret = process.env.DM_API_SECRET,
     redirectBaseUrl = process.env.DM_API_REDIRECT_BASE_URL;
 
-if (!key && !secret && !redirect_uri)
+if (!key && !secret && !redirectBaseUrl)
 {
     return console.log('Usage: node serverDemo.js / with env variables : DM_API_KEY, DM_API_SECRET, DM_API_REDIRECTURI');
 }
